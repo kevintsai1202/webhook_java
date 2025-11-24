@@ -1,0 +1,19 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(mvn clean test:*)",
+      "Bash(java -version:*)",
+      "Bash($env:JAVA_HOME=\"C:\\java\\jdk-23\")",
+      "Bash($env:PATH=\"C:\\java\\jdk-23\\bin;$env:PATH\")",
+      "Bash(export JAVA_HOME=\"/c/java/jdk-23\")",
+      "Bash(export PATH=\"/c/java/jdk-23/bin:$PATH\")",
+      "Bash(mvn test:*)",
+      "Bash(mvn spring-boot:run:*)",
+      "Bash(curl:*)",
+      "Bash(git init:*)",
+      "Bash(git add:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
