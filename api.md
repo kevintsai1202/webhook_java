@@ -7,10 +7,25 @@ Base URL: `http://localhost:8080`
 ---
 
 ## 目錄
+
+### Webhook 訊息管理
 1. [接收 Webhook 訊息](#1-接收-webhook-訊息)
 2. [查詢所有 Webhook 記錄](#2-查詢所有-webhook-記錄)
 3. [根據 ID 查詢 Webhook 記錄](#3-根據-id-查詢-webhook-記錄)
 4. [刪除 Webhook 記錄](#4-刪除-webhook-記錄)
+
+### Webhook 推送目標管理
+5. [新增推送目標](#5-新增推送目標)
+6. [查詢所有推送目標](#6-查詢所有推送目標)
+7. [根據 ID 查詢推送目標](#7-根據-id-查詢推送目標)
+8. [更新推送目標](#8-更新推送目標)
+9. [刪除推送目標](#9-刪除推送目標)
+
+### Webhook 推送功能
+10. [手動推送訊息](#10-手動推送訊息)
+11. [查詢推送歷史](#11-查詢推送歷史)
+12. [根據 ID 查詢推送記錄](#12-根據-id-查詢推送記錄)
+13. [查詢訊息的推送記錄](#13-查詢訊息的推送記錄)
 
 ---
 
@@ -244,6 +259,432 @@ Host: localhost:8080
 
 ---
 
+## 5. 新增推送目標
+
+### 端點
+```
+POST /webhook/targets
+```
+
+### 描述
+新增一個 webhook 推送目標,用於手動推送或自動轉發。
+
+### 請求內容
+
+```json
+{
+  "name": "GitHub Webhook",
+  "url": "https://api.example.com/webhooks/github",
+  "headers": {
+    "Authorization": "Bearer token123",
+    "Content-Type": "application/json"
+  },
+  "enabled": true,
+  "autoForward": false,
+  "pathPattern": "^/webhook/github/.*"
+}
+```
+
+#### 欄位說明
+| 欄位名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| name | String | 是 | 目標名稱（唯一） |
+| url | String | 是 | 推送的目標 URL |
+| headers | Object | 否 | 自訂請求標頭（JSON 物件） |
+| enabled | Boolean | 否 | 是否啟用（預設 true） |
+| autoForward | Boolean | 否 | 是否自動轉發（預設 false） |
+| pathPattern | String | 否 | 路徑匹配規則（正則表達式，為空則匹配所有） |
+
+### 回應
+
+#### 成功回應 (201 Created)
+```json
+{
+  "id": 1,
+  "name": "GitHub Webhook",
+  "url": "https://api.example.com/webhooks/github",
+  "headers": "{\"Authorization\":\"Bearer token123\",\"Content-Type\":\"application/json\"}",
+  "enabled": true,
+  "autoForward": false,
+  "pathPattern": "^/webhook/github/.*",
+  "createdAt": "2025-11-25T10:30:00.123Z",
+  "updatedAt": "2025-11-25T10:30:00.123Z"
+}
+```
+
+#### 錯誤回應 (400 Bad Request)
+```json
+{
+  "status": "error",
+  "message": "Target name already exists",
+  "field": "name"
+}
+```
+
+---
+
+## 6. 查詢所有推送目標
+
+### 端點
+```
+GET /webhook/targets
+```
+
+### 描述
+查詢所有推送目標列表。
+
+### 查詢參數
+| 參數名稱 | 類型 | 必填 | 預設值 | 說明 |
+|---------|------|------|--------|------|
+| enabled | Boolean | 否 | - | 篩選啟用/停用的目標 |
+| autoForward | Boolean | 否 | - | 篩選自動轉發的目標 |
+
+### 請求範例
+```http
+GET /webhook/targets?enabled=true&autoForward=false HTTP/1.1
+Host: localhost:8080
+```
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+[
+  {
+    "id": 1,
+    "name": "GitHub Webhook",
+    "url": "https://api.example.com/webhooks/github",
+    "headers": "{\"Authorization\":\"Bearer token123\"}",
+    "enabled": true,
+    "autoForward": false,
+    "pathPattern": "^/webhook/github/.*",
+    "createdAt": "2025-11-25T10:30:00.123Z",
+    "updatedAt": "2025-11-25T10:30:00.123Z"
+  }
+]
+```
+
+---
+
+## 7. 根據 ID 查詢推送目標
+
+### 端點
+```
+GET /webhook/targets/{id}
+```
+
+### 描述
+根據 ID 查詢特定的推送目標。
+
+### 路徑參數
+| 參數名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| id | Long | 是 | 推送目標的 ID |
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+{
+  "id": 1,
+  "name": "GitHub Webhook",
+  "url": "https://api.example.com/webhooks/github",
+  "headers": "{\"Authorization\":\"Bearer token123\"}",
+  "enabled": true,
+  "autoForward": false,
+  "pathPattern": "^/webhook/github/.*",
+  "createdAt": "2025-11-25T10:30:00.123Z",
+  "updatedAt": "2025-11-25T10:30:00.123Z"
+}
+```
+
+#### 錯誤回應 (404 Not Found)
+```json
+{
+  "status": "error",
+  "message": "Webhook target not found",
+  "id": 999
+}
+```
+
+---
+
+## 8. 更新推送目標
+
+### 端點
+```
+PUT /webhook/targets/{id}
+```
+
+### 描述
+更新指定 ID 的推送目標資訊。
+
+### 路徑參數
+| 參數名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| id | Long | 是 | 推送目標的 ID |
+
+### 請求內容
+```json
+{
+  "name": "Updated GitHub Webhook",
+  "url": "https://api.example.com/webhooks/github/v2",
+  "headers": {
+    "Authorization": "Bearer new_token456"
+  },
+  "enabled": false,
+  "autoForward": true,
+  "pathPattern": "^/webhook/github/.*"
+}
+```
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+{
+  "id": 1,
+  "name": "Updated GitHub Webhook",
+  "url": "https://api.example.com/webhooks/github/v2",
+  "headers": "{\"Authorization\":\"Bearer new_token456\"}",
+  "enabled": false,
+  "autoForward": true,
+  "pathPattern": "^/webhook/github/.*",
+  "createdAt": "2025-11-25T10:30:00.123Z",
+  "updatedAt": "2025-11-25T11:00:00.456Z"
+}
+```
+
+---
+
+## 9. 刪除推送目標
+
+### 端點
+```
+DELETE /webhook/targets/{id}
+```
+
+### 描述
+刪除指定 ID 的推送目標。
+
+### 路徑參數
+| 參數名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| id | Long | 是 | 推送目標的 ID |
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+{
+  "status": "success",
+  "message": "Webhook target deleted",
+  "id": 1
+}
+```
+
+#### 錯誤回應 (404 Not Found)
+```json
+{
+  "status": "error",
+  "message": "Webhook target not found",
+  "id": 999
+}
+```
+
+---
+
+## 10. 手動推送訊息
+
+### 端點
+```
+POST /webhook/messages/{id}/deliver
+```
+
+### 描述
+手動將指定的 webhook 訊息推送到一個或多個目標。
+
+### 路徑參數
+| 參數名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| id | Long | 是 | Webhook 訊息的 ID |
+
+### 請求內容
+```json
+{
+  "targetIds": [1, 2, 3]
+}
+```
+
+#### 欄位說明
+| 欄位名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| targetIds | Array | 是 | 推送目標 ID 列表（空陣列表示推送到所有啟用的目標） |
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+{
+  "messageId": 1,
+  "deliveries": [
+    {
+      "id": 1,
+      "targetId": 1,
+      "targetName": "GitHub Webhook",
+      "status": "success",
+      "httpStatusCode": 200,
+      "responseBody": "{\"received\":true}",
+      "sentAt": "2025-11-25T10:35:00.123Z"
+    },
+    {
+      "id": 2,
+      "targetId": 2,
+      "targetName": "Slack Webhook",
+      "status": "failed",
+      "httpStatusCode": 500,
+      "errorMessage": "Connection timeout",
+      "sentAt": "2025-11-25T10:35:01.456Z"
+    }
+  ]
+}
+```
+
+---
+
+## 11. 查詢推送歷史
+
+### 端點
+```
+GET /webhook/deliveries
+```
+
+### 描述
+查詢所有推送記錄。
+
+### 查詢參數
+| 參數名稱 | 類型 | 必填 | 預設值 | 說明 |
+|---------|------|------|--------|------|
+| page | Integer | 否 | 0 | 頁碼（從 0 開始） |
+| size | Integer | 否 | 20 | 每頁筆數 |
+| status | String | 否 | - | 篩選狀態（pending/success/failed） |
+| targetId | Long | 否 | - | 篩選特定目標 |
+| sort | String | 否 | createdAt,desc | 排序欄位及方向 |
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+{
+  "content": [
+    {
+      "id": 1,
+      "messageId": 1,
+      "targetId": 1,
+      "targetName": "GitHub Webhook",
+      "status": "success",
+      "httpStatusCode": 200,
+      "responseBody": "{\"received\":true}",
+      "sentAt": "2025-11-25T10:35:00.123Z",
+      "createdAt": "2025-11-25T10:35:00.100Z"
+    }
+  ],
+  "pageable": {
+    "pageNumber": 0,
+    "pageSize": 20
+  },
+  "totalElements": 1,
+  "totalPages": 1
+}
+```
+
+---
+
+## 12. 根據 ID 查詢推送記錄
+
+### 端點
+```
+GET /webhook/deliveries/{id}
+```
+
+### 描述
+根據 ID 查詢特定的推送記錄詳情。
+
+### 路徑參數
+| 參數名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| id | Long | 是 | 推送記錄的 ID |
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+{
+  "id": 1,
+  "message": {
+    "id": 1,
+    "requestMethod": "POST",
+    "requestPath": "/webhook/github/push",
+    "body": "{\"repository\":\"test\",\"ref\":\"main\"}"
+  },
+  "target": {
+    "id": 1,
+    "name": "GitHub Webhook",
+    "url": "https://api.example.com/webhooks/github"
+  },
+  "status": "success",
+  "httpStatusCode": 200,
+  "responseBody": "{\"received\":true}",
+  "errorMessage": null,
+  "sentAt": "2025-11-25T10:35:00.123Z",
+  "createdAt": "2025-11-25T10:35:00.100Z"
+}
+```
+
+---
+
+## 13. 查詢訊息的推送記錄
+
+### 端點
+```
+GET /webhook/messages/{id}/deliveries
+```
+
+### 描述
+查詢特定 webhook 訊息的所有推送記錄。
+
+### 路徑參數
+| 參數名稱 | 類型 | 必填 | 說明 |
+|---------|------|------|------|
+| id | Long | 是 | Webhook 訊息的 ID |
+
+### 回應
+
+#### 成功回應 (200 OK)
+```json
+[
+  {
+    "id": 1,
+    "targetId": 1,
+    "targetName": "GitHub Webhook",
+    "status": "success",
+    "httpStatusCode": 200,
+    "sentAt": "2025-11-25T10:35:00.123Z"
+  },
+  {
+    "id": 2,
+    "targetId": 2,
+    "targetName": "Slack Webhook",
+    "status": "failed",
+    "httpStatusCode": 500,
+    "errorMessage": "Connection timeout",
+    "sentAt": "2025-11-25T10:35:01.456Z"
+  }
+]
+```
+
+---
+
 ## 資料模型
 
 ### WebhookMessage
@@ -256,6 +697,36 @@ Host: localhost:8080
   "body": "String - 請求內容",
   "sourceIp": "String - 來源 IP 位址",
   "receivedAt": "Timestamp - 接收時間 (ISO 8601)"
+}
+```
+
+### WebhookTarget
+```json
+{
+  "id": "Long - 主鍵，自動遞增",
+  "name": "String - 目標名稱（唯一）",
+  "url": "String - 推送 URL",
+  "headers": "String - JSON 格式的自訂標頭",
+  "enabled": "Boolean - 是否啟用",
+  "autoForward": "Boolean - 是否自動轉發",
+  "pathPattern": "String - 路徑匹配規則（正則表達式）",
+  "createdAt": "Timestamp - 建立時間 (ISO 8601)",
+  "updatedAt": "Timestamp - 更新時間 (ISO 8601)"
+}
+```
+
+### WebhookDelivery
+```json
+{
+  "id": "Long - 主鍵，自動遞增",
+  "messageId": "Long - 關聯的 WebhookMessage ID",
+  "targetId": "Long - 關聯的 WebhookTarget ID",
+  "status": "String - 推送狀態 (pending/success/failed)",
+  "httpStatusCode": "Integer - HTTP 回應狀態碼",
+  "responseBody": "String - 回應內容",
+  "errorMessage": "String - 錯誤訊息",
+  "sentAt": "Timestamp - 發送時間 (ISO 8601)",
+  "createdAt": "Timestamp - 建立時間 (ISO 8601)"
 }
 ```
 
